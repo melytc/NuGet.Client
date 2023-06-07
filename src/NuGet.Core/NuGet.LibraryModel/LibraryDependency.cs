@@ -13,13 +13,27 @@ namespace NuGet.LibraryModel
 {
     public class LibraryDependency : IEquatable<LibraryDependency>
     {
+        private IList<NuGetLogCode> _noWarn;
+
         public LibraryRange LibraryRange { get; set; }
 
         public LibraryIncludeFlags IncludeType { get; set; } = LibraryIncludeFlags.All;
 
         public LibraryIncludeFlags SuppressParent { get; set; } = LibraryIncludeFlagUtils.DefaultSuppressParent;
 
-        public IList<NuGetLogCode> NoWarn { get; set; } = new List<NuGetLogCode>();
+        public IList<NuGetLogCode> NoWarn
+        {
+            get
+            {
+                if (_noWarn is null)
+                {
+                    _noWarn = new List<NuGetLogCode>();
+                }
+
+                return _noWarn;
+            }
+            set => _noWarn = value;
+        }
 
         public string Name => LibraryRange.Name;
 
