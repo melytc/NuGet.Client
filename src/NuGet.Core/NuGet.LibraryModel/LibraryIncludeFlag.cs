@@ -5,6 +5,10 @@ using System;
 
 namespace NuGet.LibraryModel
 {
+    // These values are bit-packed in flags.
+    // Up to 16 bits can be used to represent new values.
+    // If adding more values, the class LibraryDependency needs to be revisited for its storage allocation,
+    // as it currently allocates only 10 bits.
     [Flags]
     public enum LibraryIncludeFlags : ushort
     {

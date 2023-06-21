@@ -46,7 +46,10 @@ namespace NuGet.Commands
             {
                 foreach (var dependency in framework.Dependencies)
                 {
-                    warningProperties.AddRangeOfCodes(dependency.NoWarn, dependency.Name, framework.FrameworkName);
+                    if (dependency.NoWarnCount != 0)
+                    {
+                        warningProperties.AddRangeOfCodes(dependency.NoWarn, dependency.Name, framework.FrameworkName);
+                    }
                 }
             }
 

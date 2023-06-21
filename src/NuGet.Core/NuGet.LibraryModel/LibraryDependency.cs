@@ -13,46 +13,81 @@ namespace NuGet.LibraryModel
 {
     public class LibraryDependency : IEquatable<LibraryDependency>
     {
-        private IList<NuGetLogCode> _noWarn;
+        // This class has been optimized to allocate its fields in a 32-bit int property.
+        // Changes to Enums or fields must consider this optimization.
 
-        public LibraryRange LibraryRange { get; set; }
+        private int _flags = InitialState;
 
-        public LibraryIncludeFlags IncludeType { get; set; } = LibraryIncludeFlags.All;
+        private static readonly int InitialState = ComputeAllFlagValue() + ComputeSuppressParentValue() + ComputeLibraryDirectValue();
 
-        public LibraryIncludeFlags SuppressParent { get; set; } = LibraryIncludeFlagUtils.DefaultSuppressParent;
-
-        public IList<NuGetLogCode> NoWarn
+        public bool GeneratePathProperty
         {
-            get
-            {
-                if (_noWarn is null)
-                {
-                    _noWarn = new List<NuGetLogCode>();
-                }
-
-                return _noWarn;
-            }
-            set => _noWarn = value;
+            // This property is stored in the lowest bit (0b1) in position 00.
+            get => (_flags & 0b1) != 0;
+            set => _flags = value ? (_flags | 0b1) : (_flags & ~0b1);
         }
-
-        public string Name => LibraryRange.Name;
 
         /// <summary>
         /// True if the PackageReference is added by the SDK and not the user.
         /// </summary>
-        public bool AutoReferenced { get; set; }
+        public bool AutoReferenced
+        {
+            // This property is stored in the second lowest bit (0b10) in position 01.
+            get => (_flags & 0b10) != 0;
+            set => _flags = value ? (_flags | 0b10) : (_flags & ~0b10);
+        }
 
         /// <summary>
-        /// True if the dependency has the version set through CentralPackagVersionManagement file.
+        /// True if the dependency has the version set through CentralPackageVersionManagement file.
         /// </summary>
-        public bool VersionCentrallyManaged { get; set; }
+        public bool VersionCentrallyManaged
+        {
+            // This property is stored in the third lowest bit (0b100) in position 02.
+            get => (_flags & 0b100) != 0;
+            set => _flags = value ? (_flags | 0b100) : (_flags & ~0b100);
+        }
+
+        public LibraryIncludeFlags IncludeType
+        {
+            // This property is stored in 10 bits (0b1111_1111_1100_0), in positions 03 to 12.
+            get => (LibraryIncludeFlags)((_flags >> 3) & 0b1111_1111_11);
+            set => _flags = (_flags & ~(0b1111_1111_11 << 3)) | ((int)value << 3);
+        }
+
+        public LibraryIncludeFlags SuppressParent
+        {
+            // This property is stored in 10 bits (0b1111_1111_1100_0000_0000_000), in positions 13 to 22.
+            get => (LibraryIncludeFlags)((_flags >> 13) & 0b1111_1111_11);
+            set => _flags = (_flags & ~(0b1111_1111_11 << 13)) | ((int)value << 13);
+        }
 
         /// <summary>
         /// Information regarding if the dependency is direct or transitive.  
         /// </summary>
-        public LibraryDependencyReferenceType ReferenceType { get; set; } = LibraryDependencyReferenceType.Direct;
+        public LibraryDependencyReferenceType ReferenceType
+        {
+            // This property is stored in 6 bits (0b1111_1100_0000_0000_0000_0000_0000_0), in positions 23 to 28.
+            get => (LibraryDependencyReferenceType)((_flags >> 23) & 0b1111_11);
+            set => _flags = (_flags & ~(0b1111_11 << 23)) | ((int)value << 23);
+        }
 
-        public bool GeneratePathProperty { get; set; }
+        public IList<NuGetLogCode> NoWarn
+        {
+            // Checks if _noWarn is null, and if it is, assign it to a new instance before returning it.
+            get => _noWarn ??= new List<NuGetLogCode>();
+            set => _noWarn = value;
+        }
+
+        private IList<NuGetLogCode> _noWarn;
+
+        /// <summary>
+        /// This internal field will help us avoid allocating a list when calling the count on a null.
+        /// </summary>
+        internal int NoWarnCount => _noWarn?.Count ?? 0;
+
+        public LibraryRange LibraryRange { get; set; }
+
+        public string Name => LibraryRange.Name;
 
         public string Aliases { get; set; }
 
@@ -182,6 +217,40 @@ namespace NuGet.LibraryModel
                     d.VersionCentrallyManaged = true;
                 }
             }
+        }
+
+        /// <summary>
+        /// Computes the integer equivalent of the 'All' flag representation.
+        /// </summary>
+        internal static int ComputeAllFlagValue()
+        {
+            var allFlagValues = (LibraryIncludeFlags[])Enum.GetValues(typeof(LibraryIncludeFlags));
+            int allFlagValue = 0;
+
+            foreach (LibraryIncludeFlags flag in allFlagValues)
+            {
+                allFlagValue |= (int)flag;
+            }
+
+            return allFlagValue;
+
+        }
+
+        /// <summary>
+        /// Computes the integer equivalent of the 'LibraryIncludeFlagsUtils.DefaultSuppressParent' flag representation.
+        /// </summary>
+        internal static int ComputeSuppressParentValue()
+        {
+            return (int)LibraryIncludeFlagUtils.DefaultSuppressParent;
+        }
+
+        /// <summary>
+        /// Computes th integer equivalent of the 'LibraryDependencyReferenceType.Direct' flag representation.
+        /// </summary>
+        /// <returns></returns>
+        internal static int ComputeLibraryDirectValue()
+        {
+            return (int)LibraryDependencyReferenceType.Direct;
         }
     }
 }
