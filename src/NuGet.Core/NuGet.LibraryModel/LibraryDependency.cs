@@ -18,7 +18,13 @@ namespace NuGet.LibraryModel
 
         private int _flags = InitialState;
 
-        private static readonly int InitialState = ComputeAllFlagValue() + ComputeSuppressParentValue() + ComputeLibraryDirectValue();
+        private static readonly int InitialState =
+            // Default IncludeType, shifted to position
+            ((int)LibraryIncludeFlags.All << 3) |
+            // Default SuppressParent, shifted to position
+            ((int)LibraryIncludeFlagUtils.DefaultSuppressParent << 13) |
+            // Default ReferenceType, shifted to position
+            ((int)LibraryDependencyReferenceType.Direct << 23);
 
         public bool GeneratePathProperty
         {
@@ -83,7 +89,7 @@ namespace NuGet.LibraryModel
         /// <summary>
         /// This internal field will help us avoid allocating a list when calling the count on a null.
         /// </summary>
-        internal int NoWarnCount => _noWarn?.Count ?? 0;
+        //internal int NoWarnCount => _noWarn?.Count ?? 0;
 
         public LibraryRange LibraryRange { get; set; }
 
@@ -217,40 +223,6 @@ namespace NuGet.LibraryModel
                     d.VersionCentrallyManaged = true;
                 }
             }
-        }
-
-        /// <summary>
-        /// Computes the integer equivalent of the 'All' flag representation.
-        /// </summary>
-        internal static int ComputeAllFlagValue()
-        {
-            var allFlagValues = (LibraryIncludeFlags[])Enum.GetValues(typeof(LibraryIncludeFlags));
-            int allFlagValue = 0;
-
-            foreach (LibraryIncludeFlags flag in allFlagValues)
-            {
-                allFlagValue |= (int)flag;
-            }
-
-            return allFlagValue;
-
-        }
-
-        /// <summary>
-        /// Computes the integer equivalent of the 'LibraryIncludeFlagsUtils.DefaultSuppressParent' flag representation.
-        /// </summary>
-        internal static int ComputeSuppressParentValue()
-        {
-            return (int)LibraryIncludeFlagUtils.DefaultSuppressParent;
-        }
-
-        /// <summary>
-        /// Computes th integer equivalent of the 'LibraryDependencyReferenceType.Direct' flag representation.
-        /// </summary>
-        /// <returns></returns>
-        internal static int ComputeLibraryDirectValue()
-        {
-            return (int)LibraryDependencyReferenceType.Direct;
         }
     }
 }
