@@ -108,13 +108,20 @@ namespace NuGet.LibraryModel.Tests
 
     public class LibraryDependencyStorageTests
     {
+        private int GetFlags(LibraryDependency libraryDependency)
+        {
+            var type = libraryDependency.GetType();
+            var privateField = type.GetField("_flags", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            return (int)privateField.GetValue(libraryDependency);
+        }
+        
         [Fact]
         public void GeneratePathProperty_WhenSetToTrue_IsStoredInLowestBit()
         {
             var libraryDependency = new LibraryDependency();
             libraryDependency.GeneratePathProperty = true;
 
-            Assert.Equal(0b1, libraryDependency._flags & 0b1);
+            Assert.Equal(0b1, GetFlags(libraryDependency) & 0b1);
         }
 
         [Fact]
@@ -123,7 +130,7 @@ namespace NuGet.LibraryModel.Tests
             var libraryDependency = new LibraryDependency();
             libraryDependency.GeneratePathProperty = false;
 
-            Assert.Equal(0, libraryDependency._flags & 0b1);
+            Assert.Equal(0, GetFlags(libraryDependency) & 0b1);
         }
 
         [Fact]
@@ -132,7 +139,7 @@ namespace NuGet.LibraryModel.Tests
             var libraryDependency = new LibraryDependency();
             libraryDependency.AutoReferenced = true;
 
-            Assert.Equal(0b10, libraryDependency._flags & 0b10);
+            Assert.Equal(0b10, GetFlags(libraryDependency) & 0b10);
         }
 
         [Fact]
@@ -141,7 +148,7 @@ namespace NuGet.LibraryModel.Tests
             var libraryDependency = new LibraryDependency();
             libraryDependency.AutoReferenced = false;
 
-            Assert.Equal(0, libraryDependency._flags & 0b10);
+            Assert.Equal(0, GetFlags(libraryDependency) & 0b10);
         }
 
         [Fact]
@@ -150,7 +157,7 @@ namespace NuGet.LibraryModel.Tests
             var libraryDependency = new LibraryDependency();
             libraryDependency.VersionCentrallyManaged = true;
 
-            Assert.Equal(0b100, libraryDependency._flags & 0b100);
+            Assert.Equal(0b100, GetFlags(libraryDependency) & 0b100);
         }
 
         [Fact]
@@ -159,7 +166,7 @@ namespace NuGet.LibraryModel.Tests
             var libraryDependency = new LibraryDependency();
             libraryDependency.VersionCentrallyManaged = false;
 
-            Assert.Equal(0, libraryDependency._flags & 0b100);
+            Assert.Equal(0, GetFlags(libraryDependency) & 0b100);
         }
 
         [Fact]
@@ -167,8 +174,9 @@ namespace NuGet.LibraryModel.Tests
         {
             var libraryDependency = new LibraryDependency();
             var expectedFlags = (int)LibraryIncludeFlags.All << 3;
+            var actualFlags = GetFlags(libraryDependency) & ~(0b1111_1111_11 << 3);
 
-            Assert.Equal(expectedFlags, libraryDependency._flags & ~(0b1111_1111_11 << 3));
+            Assert.Equal(expectedFlags, actualFlags);
         }
 
         [Fact]
@@ -179,7 +187,7 @@ namespace NuGet.LibraryModel.Tests
             libraryDependency.IncludeType = includeType;
 
             var expectedFlags = (int)includeType << 3;
-            Assert.Equal(expectedFlags, libraryDependency._flags & ~(0b1111_1111_11 << 3));
+            Assert.Equal(expectedFlags, GetFlags(libraryDependency) & ~(0b1111_1111_11 << 3));
         }
 
         [Fact]
@@ -188,7 +196,7 @@ namespace NuGet.LibraryModel.Tests
             var libraryDependency = new LibraryDependency();
             var expectedFlags = (int)LibraryIncludeFlagUtils.DefaultSuppressParent << 13;
 
-            Assert.Equal(expectedFlags, libraryDependency._flags & ~(0b1111_1111_11 << 13));
+            Assert.Equal(expectedFlags, GetFlags(libraryDependency) & ~(0b1111_1111_11 << 13));
         }
 
         [Fact]
@@ -199,7 +207,7 @@ namespace NuGet.LibraryModel.Tests
             libraryDependency.SuppressParent = suppressParent;
 
             var expectedFlags = (int)suppressParent << 13;
-            Assert.Equal(expectedFlags, libraryDependency._flags & ~(0b1111_1111_11 << 13));
+            Assert.Equal(expectedFlags, GetFlags(libraryDependency) & ~(0b1111_1111_11 << 13));
         }
 
         [Fact]
@@ -208,7 +216,7 @@ namespace NuGet.LibraryModel.Tests
             var libraryDependency = new LibraryDependency();
             var expectedFlags = (int)LibraryDependencyReferenceType.Direct << 23;
 
-            Assert.Equal(expectedFlags, libraryDependency._flags & ~(0b1111_11 << 23));
+            Assert.Equal(expectedFlags, GetFlags(libraryDependency) & ~(0b1111_11 << 23));
         }
 
         [Fact]
@@ -219,7 +227,7 @@ namespace NuGet.LibraryModel.Tests
             libraryDependency.ReferenceType = referenceType;
 
             var expectedFlags = (int)referenceType << 23;
-            Assert.Equal(expectedFlags, libraryDependency._flags & ~(0b1111_11 << 23));
+            Assert.Equal(expectedFlags, GetFlags(libraryDependency) & ~(0b1111_11 << 23));
         }
 
         [Fact]
