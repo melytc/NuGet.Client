@@ -89,7 +89,7 @@ namespace NuGet.LibraryModel
         /// <summary>
         /// This internal field will help us avoid allocating a list when calling the count on a null.
         /// </summary>
-        //internal int NoWarnCount => _noWarn?.Count ?? 0;
+        public int NoWarnCount => _noWarn?.Count ?? 0;
 
         public LibraryRange LibraryRange { get; set; }
 
